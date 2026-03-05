@@ -45,7 +45,7 @@ double media(int tam, const std::vector<double>& vetor) {
 
 
 
-void DEP_grupo(int n, int p, double alpha, double beta, double beta2, int numcen, int cenarios_por_grupo, int gr, const std::vector <int>& cenarios,
+void DEP_grupo(int n, int p, double alpha, int numcen, int cenarios_por_grupo, int gr, const std::vector <int>& cenarios,
 	const std::vector<std::vector<std::vector<double>>>& custo,
 	const std::vector<std::vector<std::vector<double>>>& fluxo,
 	std::vector<double>& solucao,
@@ -289,7 +289,7 @@ void DEP_grupo(int n, int p, double alpha, double beta, double beta2, int numcen
 	env.end();
 }
 
-double DEP_todos(int gr, int n, int p, double alpha, double beta, double beta2, int numcen,
+double DEP_todos(int gr, int n, int p, double alpha, int numcen,
 	const std::vector<std::vector<std::vector<double>>>& custo,
 	const std::vector<std::vector<std::vector<double>>>& fluxo,
 	std::vector<vector<int>>& hubs_grupo) {
@@ -535,7 +535,7 @@ double DEP_todos(int gr, int n, int p, double alpha, double beta, double beta2, 
 int main(int argc, char* argv[]) {
 	try {
 		/**============================
-		 * (Command-line arguments: CAB-High-10.txt p alpha beta)
+		 * (Command-line arguments: CAB-High-10.txt p alpha)
 		 *=============================== */
 		clock_t inicio_CPU,       
 			fim_CPU;
@@ -546,23 +546,20 @@ int main(int argc, char* argv[]) {
 			arq.close();
 			exit(EXIT_FAILURE);
 		}
-		// Entrada via linha de comando: CAB-High10.txt p alpha beta total_grupos
+		// Entrada via linha de comando: CAB-High10.txt p alpha total_grupos
 		int n; // number of nodes
 		int numcen;// number of scenarios
 		arq >> n;
 		arq >> numcen;
 		int p;
 		double alpha;
-		double beta;
 		if (argc >= 2) //Coletar números de hubs a serem ativados
 		    p = atoi(argv[2]);
 		else n = 20;
 		alpha = atof(argv[3]);
-		beta = atof(argv[4]);
 		int total_grupos; // number of groups
-		total_grupos = atoi(argv[7]);
+		total_grupos = atoi(argv[4]);
 		int cenarios_por_grupo = numcen/total_grupos;
-		double beta2 = 1 / (1 - beta);
 		std::vector<std::vector<std::vector<double>>> custo(numcen, std::vector<std::vector<double>>(n, std::vector<double>(n, 0)));
 		std::vector<std::vector<std::vector<double>>> fluxo(numcen, std::vector<std::vector<double>>(n, std::vector<double>(n, 0)));
 		std::vector<int> cenario(total_grupos);
@@ -585,7 +582,7 @@ int main(int argc, char* argv[]) {
 		}
     		//gr é o contador do grupo
 		for (int gr = 0; gr < total_grupos; gr++) {
-			DEP_grupo(n, p, alpha, beta, beta2, numcen, cenarios_por_grupo, gr, cenario, custo, fluxo, solucao, hubs_grupo);
+			DEP_grupo(n, p, alpha, numcen, cenarios_por_grupo, gr, cenario, custo, fluxo, solucao, hubs_grupo);
 		}
 		double lb = media(total_grupos, solucao);
 		
@@ -595,7 +592,7 @@ int main(int argc, char* argv[]) {
 		double auxiliar;
 		int indice;
 		for (int gr = 0; gr < total_grupos; gr++) {
-			auxiliar = DEP_todos(gr, n, p, alpha, beta, beta2, numcen, custo, fluxo, hubs_grupo);
+			auxiliar = DEP_todos(gr, n, p, alpha, numcen, custo, fluxo, hubs_grupo);
 			if (auxiliar < ub ){
 			      ub = auxiliar;
 			      indice = gr;
@@ -612,7 +609,6 @@ int main(int argc, char* argv[]) {
 		cout <<"O valor de n:"<< n << endl;
 		cout << "O valor de p:" << p << endl;
 		cout << "O valor de alpha:" << alpha << endl;
-		cout << "O valor de beta:" << beta << endl;
 		printf("\nTempo: %10.4f\n", tempo);
 		printf("\n *************** Solucao FINAL: **************************");
 		printf("\n\n UB igual a \t %10.4f", ub);
@@ -628,23 +624,17 @@ int main(int argc, char* argv[]) {
 		cout << endl;
 		
 		int alpha0 = 10 * alpha;
-		int beta0 = 10 * beta;
 		
 		FILE *re2;
 		FILE *re3;
 		re2 = fopen("Resultados.txt","aw+");
 		re3 = fopen("Tabela.txt","aw+");
-                fprintf(re2, "\n\n %s - %d - %d - %d - %d - %d \t %10.4f \t %10.4f \t %10.4f \t %10.4f \t", argv[1], n, numcen , p, alpha0, beta0, tempo, ub, lb, gap_cen);
-                fprintf(re3, "\n %s - %d - %d - %d - %d - %d \t %10.4f \t %10.4f \t %10.4f \t %10.4f \t ", argv[1], n, numcen , p, alpha0, beta0, tempo, ub, lb, gap_cen);
+                fprintf(re2, "\n\n %s - %d - %d - %d - %d \t %10.4f \t %10.4f \t %10.4f \t %10.4f \t", argv[1], n, numcen , p, alpha0,  tempo, ub, lb, gap_cen);
+                fprintf(re3, "\n %s - %d - %d - %d - %d \t %10.4f \t %10.4f \t %10.4f \t %10.4f \t ", argv[1], n, numcen , p, alpha0, tempo, ub, lb, gap_cen);
 		for (int j = 0; j < n; j++) {
 			if (hubs_grupo[indice][j] >= 0.1) {
 				fprintf(re2, " %d\t ", j + 1);
 				fprintf(re3, " %d\t ", j + 1);
-			}
-		}
-		for (int j = 0; j < n; j++) {
-			if (hubs_grupo[indice][j] >= 0.1) {
-				fprintf(re3, " %d - ", j + 1);
 			}
 		}
 		printf("\n");
